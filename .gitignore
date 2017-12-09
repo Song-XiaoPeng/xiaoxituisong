@@ -1,0 +1,6 @@
+.idea
+composer.lock
+*.log
+vendor
+/uploads/message
+/uploads/source_material
