@@ -113,17 +113,28 @@ class Events{
         $redis = self::createRedis();
         $redis->select(0);
         $uid_list = $redis->keys('*');
-        foreach($uid_list as $v){
-            $session_list = $redis->sMembers($v);
-            foreach($session_list as $val){
-                Gateway::sendToUid($v, $val);
+        foreach ($uid_list as $uid) {
+            $session_list = $redis->sMembers($uid);
+
+            if (Gateway::getClientIdByUid($uid)) {
+                $redis->del($uid);
+
+                foreach ($session_list as $key=>$val) {
+                    $session_arr[$key] = json_decode($val,true);
+                }
+
+                $arr = [
+                    'type' => 'session',
+                    'sk_data' => $session_arr
+                ];
+                Gateway::sendToUid($uid, json_encode($arr));
             }
         }
     }
 
     // 启动进程计时器轮询发送相应redis数据至im客户端
     public static function onWorkerStart(){
-        Timer::add(2, function(){
+        Timer::add(3, function(){
             self::getSessionList();
         });
     }
