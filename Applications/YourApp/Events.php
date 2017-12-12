@@ -28,6 +28,15 @@ class Events{
         ]);
     }
 
+    //emoji表情反转义
+    private static function emojiDeCode($str){
+        $strDecode = preg_replace_callback('|\[\[EMOJI:(.*?)\]\]|', function($matches){	
+            return rawurldecode($matches[1]);
+        }, $str);
+
+        return $strDecode;
+    }
+
     // 校验token是否正确
     private static function checkToken($uid, $token){
         $client = new \GuzzleHttp\Client();
@@ -132,8 +141,45 @@ class Events{
         }
     }
 
+    // 获取会话消息
+    public static function getMessageList(){
+        $redis = self::createRedis();
+        $redis->select(1);
+        $uid_list = $redis->keys('*');
+
+        foreach ($uid_list as $uid) {
+            $message_list = $redis->zRange($uid, 0, -1);
+
+            if (Gateway::getClientIdByUid($uid)) {
+                $redis->del($uid);
+
+                foreach ($message_list as $key=>$val) {
+                    $message_arr[$key] = json_decode($val, true);
+                }
+
+                foreach($message_arr as $i=>$c){
+                    if(!empty($c['text'])){
+                        $message_arr[$i]['text'] = self::emojiDeCode($c['text']);
+                    }else{
+                        $message_arr[$i]['text'] = '';
+                    }
+                }
+
+                $arr = [
+                    'type' => 'message',
+                    'sk_data' => $message_arr
+                ];
+                Gateway::sendToUid($uid, self::msg(200, 'success', $arr));
+            }
+        }
+    }
+
     // 启动进程计时器轮询发送相应redis数据至im客户端
     public static function onWorkerStart(){
+        Timer::add(2, function(){
+            self::getMessageList();
+        });
+
         Timer::add(3, function(){
             self::getSessionList();
         });
