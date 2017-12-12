@@ -11,6 +11,12 @@ use Workerman\Lib\Timer;
 class Events{
     const API_URL = 'http://kf.lyfz.net';
 
+    const REDIS_HOST = '118.178.141.154';
+
+    const REDIS_PORT = 6379;
+
+    const REDIS_PASSWORD = '556ca120';
+
     // 返回消息码处理
     private static function msg($code, $message, $body = ''){
         return json_encode([
@@ -43,6 +49,17 @@ class Events{
         return json_decode($response->getBody(),true);
     }
 
+    //创建redis连接
+    public static function createRedis(){
+        $redis = new \Predis\Client([
+            'host' => self::REDIS_HOST,
+            'port' => self::REDIS_PORT,
+            'password' => self::REDIS_PASSWORD,
+        ]);
+
+        return $redis;
+    }
+
     /**
      * 当客户端连接时触发
      * 如果业务不需此回调可以删除onConnect
@@ -52,6 +69,7 @@ class Events{
     public static function onConnect($client_id){
         // 连接到来后，定时10秒关闭这个链接，需要10秒内发认证并删除定时器阻止关闭连接的执行
         $_SESSION['auth_timer_id'] = Timer::add(10, function($client_id){
+            Gateway::sendToClient($client_id, self::msg(6002,'authentication timeout'));
             Gateway::closeClient($client_id);
         }, array($client_id), false);
 
@@ -90,12 +108,23 @@ class Events{
        echo "$client_id logout\r\n";
     }
 
+    // 获取会话列表
+    public static function getSessionList(){
+        $redis = self::createRedis();
+        $redis->select(0);
+        $uid_list = $redis->keys('*');
+        foreach($uid_list as $v){
+            $session_list = $redis->sMembers($v);
+            foreach($session_list as $val){
+                Gateway::sendToUid($v, $val);
+            }
+        }
+    }
+
     // 启动进程计时器轮询发送相应redis数据至im客户端
     public static function onWorkerStart(){
         Timer::add(2, function(){
-            //echo "test timer\n";
-            Gateway::sendToUid('6454', 123);
-            
+            self::getSessionList();
         });
     }
 }
