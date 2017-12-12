@@ -159,7 +159,8 @@ class Events{
                 $redis->del($uid);
 
                 foreach ($message_list as $key=>$val) {
-                    $message_arr[$key] = json_decode($val, true);
+                    $val = json_decode($val, true);
+                    $message_arr[$val['customer_wx_openid']] = $val;
                 }
 
                 foreach($message_arr as $i=>$c){
