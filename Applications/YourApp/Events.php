@@ -136,7 +136,10 @@ class Events{
 
                 $arr = [
                     'type' => 'session',
-                    'sk_data' => $session_arr
+                    'sk_data' => [
+                        'waiting' => $session_arr,
+                        'queue_up' => [],
+                    ]
                 ];
                 Gateway::sendToUid($uid, self::msg(200, 'success', $arr));
             }
