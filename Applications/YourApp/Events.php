@@ -76,6 +76,8 @@ class Events{
      * @param int $client_id 连接id
      */
     public static function onConnect($client_id){
+        echo "$client_id------connect\r\n";
+
         // 连接到来后，定时10秒关闭这个链接，需要10秒内发认证并删除定时器阻止关闭连接的执行
         $_SESSION['auth_timer_id'] = Timer::add(10, function($client_id){
             Gateway::sendToClient($client_id, self::msg(6002,'authentication timeout'));
@@ -176,12 +178,17 @@ class Events{
 
     // 启动进程计时器轮询发送相应redis数据至im客户端
     public static function onWorkerStart(){
-        Timer::add(2, function(){
-            self::getMessageList();
-        });
+        $redis = new \Predis\Client([
+            'host' => self::REDIS_HOST,
+            'port' => self::REDIS_PORT,
+            'password' => self::REDIS_PASSWORD,
+        ]);
+        // Timer::add(2, function(){
+        //     self::getMessageList();
+        // });
 
-        Timer::add(3, function(){
-            self::getSessionList();
-        });
+        // Timer::add(3, function(){
+        //     self::getSessionList();
+        // });
     }
 }
