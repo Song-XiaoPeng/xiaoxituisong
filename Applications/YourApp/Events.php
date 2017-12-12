@@ -178,17 +178,12 @@ class Events{
 
     // 启动进程计时器轮询发送相应redis数据至im客户端
     public static function onWorkerStart(){
-        $redis = new \Predis\Client([
-            'host' => self::REDIS_HOST,
-            'port' => self::REDIS_PORT,
-            'password' => self::REDIS_PASSWORD,
-        ]);
-        // Timer::add(2, function(){
-        //     self::getMessageList();
-        // });
+        Timer::add(2, function(){
+            self::getMessageList();
+        });
 
-        // Timer::add(3, function(){
-        //     self::getSessionList();
-        // });
+        Timer::add(3, function(){
+            self::getSessionList();
+        });
     }
 }
