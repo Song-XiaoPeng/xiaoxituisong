@@ -1,41 +1,46 @@
 <?php
 /**
- * This file is part of workerman.
- *
- * Licensed under The MIT License
- * For full copyright and license information, please see the MIT-LICENSE.txt
- * Redistributions of files must retain the above copyright notice.
- *
- * @author walkor<walkor@workerman.net>
- * @copyright walkor<walkor@workerman.net>
- * @link http://www.workerman.net/
- * @license http://www.opensource.org/licenses/mit-license.php MIT License
- */
-
-/**
  * 用于检测业务代码死循环或者长时间阻塞等问题
  * 如果发现业务卡死，可以将下面declare打开（去掉//注释），并执行php start.php reload
  * 然后观察一段时间workerman.log看是否有process_timeout异常
  */
 //declare(ticks=1);
-
 use \GatewayWorker\Lib\Gateway;
+use Workerman\Lib\Timer;
 
-/**
- * 主逻辑
- * 主要是处理 onConnect onMessage onClose 三个方法
- * onConnect 和 onClose 如果不需要可以不用实现并删除
- */
-class Events
-{
-    private static function msg($code,$message,$body){
+class Events{
+    const API_URL = 'http://kf.lyfz.net';
+
+    // 返回消息码处理
+    private static function msg($code, $message, $body = ''){
         return json_encode([
             'meta' => [
                 'code' => $code,
                 'message' => $message,
             ],
-            'body' => $body
+            'body' => empty($body) == true ? '' : $body
         ]);
+    }
+
+    // 校验token是否正确
+    private static function checkToken($uid, $token){
+        $client = new \GuzzleHttp\Client();
+
+        $request_data = [
+            'uid' => $uid,
+            'token' => $token
+        ];
+
+        $response = $client->request(
+            'PUT', 
+            self::API_URL.'/api/v1/user/Auth/checkToken', 
+            [
+                'json' => $request_data,
+                'timeout' => 3
+            ]
+        );
+
+        return json_decode($response->getBody(),true);
     }
 
     /**
@@ -44,31 +49,51 @@ class Events
      * 
      * @param int $client_id 连接id
      */
-    public static function onConnect($client_id)
-    {
-        Gateway::sendToClient($client_id, self::msg(200,'success',['client_id'=>$client_id]));
+    public static function onConnect($client_id){
+        // 连接到来后，定时10秒关闭这个链接，需要10秒内发认证并删除定时器阻止关闭连接的执行
+        $_SESSION['auth_timer_id'] = Timer::add(10, function($client_id){
+            Gateway::closeClient($client_id);
+        }, array($client_id), false);
+
+        Gateway::sendToClient($client_id, self::msg(200,'success'));
     }
     
-   /**
-    * 当客户端发来消息时触发
-    * @param int $client_id 连接id
-    * @param mixed $message 具体消息
-    */
-   public static function onMessage($client_id, $message)
-   {
-        echo "$client_id said $message\r\n";
-        // 向所有人发送 
-        Gateway::sendToAll("$client_id said $message\r\n");
-   }
+    /**
+     * 当客户端发来消息时触发
+     * @param int $client_id 连接id
+     * @param mixed $message 具体消息
+     */
+    public static function onMessage($client_id, $message){
+        echo "$client_id sid $message\r\n";
+
+        $message = json_decode($message, true);
+
+        $check_res = self::checkToken($message['uid'], $message['token']);
+
+        if($check_res['meta']['code'] != 200){
+            Gateway::sendToClient($client_id, self::msg(6001,'token error'));
+            Gateway::closeClient($client_id);
+            return;
+        }else{
+            Timer::del($_SESSION['auth_timer_id']);
+            Gateway::bindUid($client_id, $message['uid']);
+            Gateway::sendToClient($client_id, self::msg(200,'success',['client_id'=>$client_id]));
+            return;
+        }
+    }
    
-   /**
-    * 当用户断开连接时触发
-    * @param int $client_id 连接id
-    */
-   public static function onClose($client_id)
-   {
+    /**
+     * 当用户断开连接时触发
+     * @param int $client_id 连接id
+     */
+    public static function onClose($client_id){
        echo "$client_id logout\r\n";
-       // 向所有人发送 
-       GateWay::sendToAll("$client_id logout\r\n");
-   }
+    }
+
+    // 启动进程计时器轮询发送相应redis数据至im客户端
+    public static function onWorkerStart(){
+        Timer::add(2, function(){
+            echo "test timer\n";
+        });
+    }
 }
