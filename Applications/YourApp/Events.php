@@ -93,7 +93,9 @@ class Events{
     // 启动进程计时器轮询发送相应redis数据至im客户端
     public static function onWorkerStart(){
         Timer::add(2, function(){
-            echo "test timer\n";
+            //echo "test timer\n";
+            Gateway::sendToUid('6454', 123);
+            
         });
     }
 }
