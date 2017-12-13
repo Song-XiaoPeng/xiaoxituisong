@@ -188,7 +188,7 @@ class Events{
 
     // 启动进程计时器轮询发送相应redis数据至im客户端
     public static function onWorkerStart(){
-        Timer::add(3, function(){
+        Timer::add(2, function(){
             self::getMessageList();
         });
 
