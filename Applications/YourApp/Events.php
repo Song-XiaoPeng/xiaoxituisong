@@ -118,7 +118,7 @@ class Events{
      * @param int $client_id 连接id
      */
     public static function onClose($client_id){
-       echo "$client_id logout\r\n";
+       echo "$client_id------logout\r\n";
     }
 
     // 获取会话列表
