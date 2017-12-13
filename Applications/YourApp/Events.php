@@ -60,6 +60,26 @@ class Events{
         return json_decode($response->getBody(),true);
     }
 
+    // 获取商户所有uid
+    private static function getCompanyUidList($company_id){
+        $client = new \GuzzleHttp\Client();
+
+        $request_data = [
+            'company_id' => $company_id
+        ];
+
+        $response = $client->request(
+            'PUT', 
+            self::API_URL.'/api/v1/user/Auth/getCompanyUidList', 
+            [
+                'json' => $request_data,
+                'timeout' => 3
+            ]
+        );
+
+        return json_decode($response->getBody(),true)['body'];
+    }
+
     //创建redis连接
     public static function createRedis(){
         $redis = new \Predis\Client([
@@ -134,6 +154,7 @@ class Events{
         $redis = self::createRedis();
         $redis->select(0);
         $uid_list = $redis->keys('*');
+
         foreach ($uid_list as $uid) {
             $session_list = $redis->sMembers($uid);
 
@@ -141,19 +162,36 @@ class Events{
                 $redis->del($uid);
 
                 foreach ($session_list as $key=>$val) {
-                    $session_arr[$key] = json_decode($val,true);
+                    $waiting_arr[$key] = json_decode($val,true);
                 }
-
-                $arr = [
-                    'type' => 'session',
-                    'sk_data' => [
-                        'waiting' => $session_arr,
-                        'queue_up' => [],
-                    ]
-                ];
-                Gateway::sendToUid($uid, self::msg(200, 'success', $arr));
             }
         }
+
+        $redis->select(2);
+        $company_id_list = $redis->keys('*');
+
+        foreach ($company_id_list as $company_id) {
+            $session_list = $redis->sMembers($company_id);
+
+            $uid_list = self::getCompanyUidList($company_id);
+
+            foreach($uid_list as $uid){
+                if (Gateway::getClientIdByUid($uid)) {
+                    foreach ($session_list as $key=>$val) {
+                        $queue_up_arr[$key] = json_decode($val,true);
+                    }
+                }
+            }
+        }
+
+        $arr = [
+            'type' => 'session',
+            'sk_data' => [
+                'waiting' => empty($waiting_arr) == true ? [] : $waiting_arr,
+                'queue_up' => empty($queue_up_arr) == true ? [] : $queue_up_arr,
+            ]
+        ];
+        Gateway::sendToUid($uid, self::msg(200, 'success', $arr));
     }
 
     // 获取会话消息
