@@ -106,12 +106,10 @@ class Events{
                 if($check_res['meta']['code'] != 200){
                     Gateway::sendToClient($client_id, self::msg(6001,'token error'));
                     Gateway::closeClient($client_id);
-                    return;
                 }else{
                     Timer::del($_SESSION['auth_timer_id']);
                     Gateway::bindUid($client_id, $message['uid']);
                     Gateway::sendToClient($client_id, self::msg(200,'success',['client_id'=>$client_id]));
-                    return;
                 }
                 break;
             case 'ping':
