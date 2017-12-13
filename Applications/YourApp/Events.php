@@ -149,7 +149,7 @@ class Events{
        echo "$client_id------logout\r\n";
     }
 
-    // 获取会话列表
+    // 获取待接入会话列表
     public static function getSessionList(){
         $redis = self::createRedis();
         $redis->select(0);
@@ -164,6 +164,16 @@ class Events{
                 foreach ($session_list as $key=>$val) {
                     $waiting_arr[$key] = json_decode($val,true);
                 }
+
+                $arr = [
+                    'type' => 'session',
+                    'sk_data' => [
+                        'waiting' => empty($waiting_arr) == true ? [] : $waiting_arr,
+                        'queue_up' => [],
+                    ]
+                ];
+        
+                Gateway::sendToUid($uid, self::msg(200, 'success', $arr));
             }
         }
 
@@ -183,15 +193,37 @@ class Events{
                 }
             }
         }
+    }
 
-        $arr = [
-            'type' => 'session',
-            'sk_data' => [
-                'waiting' => empty($waiting_arr) == true ? [] : $waiting_arr,
-                'queue_up' => empty($queue_up_arr) == true ? [] : $queue_up_arr,
-            ]
-        ];
-        Gateway::sendToUid($uid, self::msg(200, 'success', $arr));
+    // 获取排队中会话列表
+    public static function getConversationSessionList(){
+        $redis = self::createRedis();
+        $redis->select(2);
+        $company_id_list = $redis->keys('*');
+
+        foreach ($company_id_list as $company_id) {
+            $session_list = $redis->sMembers($company_id);
+
+            $uid_list = self::getCompanyUidList($company_id);
+
+            foreach($uid_list as $uid){
+                if (Gateway::getClientIdByUid($uid)) {
+                    foreach ($session_list as $key=>$val) {
+                        $queue_up_arr[$key] = json_decode($val,true);
+                    }
+
+                    $arr = [
+                        'type' => 'session',
+                        'sk_data' => [
+                            'waiting' => [],
+                            'queue_up' => empty($queue_up_arr) == true ? [] : $queue_up_arr,
+                        ]
+                    ];
+            
+                    Gateway::sendToUid($uid, self::msg(200, 'success', $arr));
+                }
+            }
+        }
     }
 
     // 获取会话消息
@@ -240,6 +272,10 @@ class Events{
 
         Timer::add(3, function(){
             self::getSessionList();
+        });
+
+        Timer::add(3, function(){
+            self::getConversationSessionList();
         });
     }
 }
