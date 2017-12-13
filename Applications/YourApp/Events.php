@@ -17,7 +17,7 @@ class Events{
 
     const REDIS_PASSWORD = '556ca120';
 
-    const IMG_TRANSFER_URL = 'http:/kf.lyfz.net/api/v1/we_chat/Business/getWxUrlImg?url=';
+    const IMG_TRANSFER_URL = 'http://kf.lyfz.net/api/v1/we_chat/Business/getWxUrlImg?url=';
 
     // 返回消息码处理
     private static function msg($code, $message, $body = ''){
