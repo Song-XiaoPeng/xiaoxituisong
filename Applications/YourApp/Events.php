@@ -160,21 +160,21 @@ class Events{
 
                 foreach ($message_list as $key=>$val) {
                     $val = json_decode($val, true);
-                    $message_arr[$val['customer_wx_openid']] = $val;
-                }
 
-                foreach($message_arr as $i=>$c){
-                    if(!empty($c['text'])){
-                        $message_arr[$i]['text'] = self::emojiDeCode($c['text']);
+                    if(!empty($val['text'])){
+                        $val['text'] = self::emojiDeCode($val['text']);
                     }else{
-                        $message_arr[$i]['text'] = '';
+                        $val['text'] = '';
                     }
+
+                    $message_arr[$val['customer_wx_openid']][] = $val;
                 }
 
                 $arr = [
                     'type' => 'message',
                     'sk_data' => $message_arr
                 ];
+
                 Gateway::sendToUid($uid, self::msg(200, 'success', $arr));
             }
         }
@@ -182,7 +182,7 @@ class Events{
 
     // 启动进程计时器轮询发送相应redis数据至im客户端
     public static function onWorkerStart(){
-        Timer::add(2, function(){
+        Timer::add(3, function(){
             self::getMessageList();
         });
 
