@@ -60,24 +60,24 @@ class Events{
         return json_decode($response->getBody(),true);
     }
 
-    // 获取商户所有uid
-    private static function getCompanyUidList($company_id){
+    // 获取uid的商户company_id
+    private static function getUidCompanyId($uid){
         $client = new \GuzzleHttp\Client();
 
         $request_data = [
-            'company_id' => $company_id
+            'uid' => $uid
         ];
 
         $response = $client->request(
             'PUT', 
-            self::API_URL.'/api/v1/user/Auth/getCompanyUidList', 
+            self::API_URL.'/api/v1/user/Auth/getUidCompanyId', 
             [
                 'json' => $request_data,
                 'timeout' => 3
             ]
         );
 
-        return json_decode($response->getBody(),true)['body'];
+        return json_decode($response->getBody(),true)['body']['company_id'];
     }
 
     //创建redis连接
@@ -134,6 +134,9 @@ class Events{
                 break;
             case 'ping':
                 break;
+            case 'get_lineup_session':
+                self::getConversationSessionList($message['uid']);
+                break;
             default:
                 Gateway::sendToClient($client_id, self::msg(6003,'type error'));
                 Gateway::closeClient($client_id);
@@ -176,53 +179,31 @@ class Events{
                 Gateway::sendToUid($uid, self::msg(200, 'success', $arr));
             }
         }
-
-        $redis->select(2);
-        $company_id_list = $redis->keys('*');
-
-        foreach ($company_id_list as $company_id) {
-            $session_list = $redis->sMembers($company_id);
-
-            $uid_list = self::getCompanyUidList($company_id);
-
-            foreach($uid_list as $uid){
-                if (Gateway::getClientIdByUid($uid)) {
-                    foreach ($session_list as $key=>$val) {
-                        $queue_up_arr[$key] = json_decode($val,true);
-                    }
-                }
-            }
-        }
     }
 
     // 获取排队中会话列表
-    public static function getConversationSessionList(){
+    public static function getConversationSessionList($uid){
+        //获取用户的company_id
+        $company_id = self::getUidCompanyId($uid);
+
         $redis = self::createRedis();
         $redis->select(2);
-        $company_id_list = $redis->keys('*');
+        $session_list = $redis->sMembers($company_id);
 
-        foreach ($company_id_list as $company_id) {
-            $session_list = $redis->sMembers($company_id);
-
-            $uid_list = self::getCompanyUidList($company_id);
-
-            foreach($uid_list as $uid){
-                if (Gateway::getClientIdByUid($uid)) {
-                    foreach ($session_list as $key=>$val) {
-                        $queue_up_arr[$key] = json_decode($val,true);
-                    }
-
-                    $arr = [
-                        'type' => 'session',
-                        'sk_data' => [
-                            'waiting' => [],
-                            'queue_up' => empty($queue_up_arr) == true ? [] : $queue_up_arr,
-                        ]
-                    ];
-            
-                    Gateway::sendToUid($uid, self::msg(200, 'success', $arr));
-                }
+        if (Gateway::getClientIdByUid($uid)) {
+            foreach ($session_list as $key=>$val) {
+                $queue_up_arr[$key] = json_decode($val,true);
             }
+
+            $arr = [
+                'type' => 'session',
+                'sk_data' => [
+                    'waiting' => [],
+                    'queue_up' => empty($queue_up_arr) == true ? [] : $queue_up_arr,
+                ]
+            ];
+    
+            Gateway::sendToUid($uid, self::msg(200, 'success', $arr));
         }
     }
 
@@ -272,10 +253,6 @@ class Events{
 
         Timer::add(3, function(){
             self::getSessionList();
-        });
-
-        Timer::add(3, function(){
-            self::getConversationSessionList();
         });
     }
 }
