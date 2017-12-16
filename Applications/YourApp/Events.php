@@ -124,6 +124,10 @@ class Events{
                 $check_res = self::checkToken($message['uid'], $message['token']);
             
                 if($check_res['meta']['code'] != 200){
+                    if (!empty($message['company_id'])) {
+                        $_SESSION['company_id'] = $message['company_id'];
+                    }
+
                     Gateway::sendToClient($client_id, self::msg(6001,'token error'));
                     Gateway::closeClient($client_id);
                 }else{
@@ -184,7 +188,11 @@ class Events{
     // 获取排队中会话列表
     public static function getConversationSessionList($uid){
         //获取用户的company_id
-        $company_id = self::getUidCompanyId($uid);
+        if(!empty($_SESSION['company_id'])){
+            $company_id = $_SESSION['company_id'];
+        }else{
+            $company_id = self::getUidCompanyId($uid);
+        }
 
         $redis = self::createRedis();
         $redis->select(2);
