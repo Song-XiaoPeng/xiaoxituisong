@@ -124,13 +124,13 @@ class Events{
                 $check_res = self::checkToken($message['uid'], $message['token']);
             
                 if($check_res['meta']['code'] != 200){
+                    Gateway::sendToClient($client_id, self::msg(6001,'token error'));
+                    Gateway::closeClient($client_id);
+                }else{
                     if (!empty($message['company_id'])) {
                         $_SESSION['company_id'] = $message['company_id'];
                     }
 
-                    Gateway::sendToClient($client_id, self::msg(6001,'token error'));
-                    Gateway::closeClient($client_id);
-                }else{
                     Timer::del($_SESSION['auth_timer_id']);
                     Gateway::bindUid($client_id, $message['uid']);
                     Gateway::sendToClient($client_id, self::msg(200,'success',['client_id'=>$client_id]));
