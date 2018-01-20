@@ -40,12 +40,13 @@ class Events{
     }
 
     // 校验token是否正确
-    private static function checkToken($uid, $token){
+    private static function checkToken($uid, $token, $client){
         $client = new \GuzzleHttp\Client();
 
         $request_data = [
             'uid' => $uid,
-            'token' => $token
+            'token' => $token,
+            'client' => $client
         ];
 
         $response = $client->request(
@@ -121,7 +122,7 @@ class Events{
 
         switch($message['type']){
             case 'auth':
-                $check_res = self::checkToken($message['uid'], $message['token']);
+                $check_res = self::checkToken($message['uid'], $message['token'], $message['client']);
             
                 if($check_res['meta']['code'] != 200){
                     Gateway::sendToClient($client_id, self::msg(6001,'token error'));
