@@ -40,13 +40,13 @@ class Events{
     }
 
     // 校验token是否正确
-    private static function checkToken($uid, $token, $client){
+    private static function checkToken($uid, $token, $client_type){
         $client = new \GuzzleHttp\Client();
 
         $request_data = [
             'uid' => $uid,
             'token' => $token,
-            'client' => $client
+            'client' => $client_type
         ];
 
         $response = $client->request(
