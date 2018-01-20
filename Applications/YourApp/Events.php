@@ -81,6 +81,27 @@ class Events{
         return json_decode($response->getBody(),true)['body']['company_id'];
     }
 
+    // 标记账号在线或不在线
+    private static function setUserOnlineState($uid,$state){
+        $client = new \GuzzleHttp\Client();
+
+        $request_data = [
+            'uid' => $uid,
+            'state' => $state
+        ];
+
+        $response = $client->request(
+            'PUT', 
+            self::API_URL.'/api/v1/user/Auth/setUserOnlineState', 
+            [
+                'json' => $request_data,
+                'timeout' => 3
+            ]
+        );
+
+        return json_decode($response->getBody(),true);
+    }
+
     //创建redis连接
     public static function createRedis(){
         $redis = new \Predis\Client([
@@ -95,7 +116,6 @@ class Events{
     /**
      * 当客户端连接时触发
      * 如果业务不需此回调可以删除onConnect
-     * 
      * @param int $client_id 连接id
      */
     public static function onConnect($client_id){
@@ -132,9 +152,13 @@ class Events{
                         $_SESSION['company_id'] = $message['company_id'];
                     }
 
+                    $_SESSION['uid'] = $message['uid'];
+
                     Timer::del($_SESSION['auth_timer_id']);
                     Gateway::bindUid($client_id, $message['uid']);
                     Gateway::sendToClient($client_id, self::msg(200,'success',['client_id'=>$client_id]));
+
+                    self::setUserOnlineState($message['uid'],1);
                 }
                 break;
             case 'ping':
@@ -154,7 +178,11 @@ class Events{
      * @param int $client_id 连接id
      */
     public static function onClose($client_id){
-       echo "$client_id------logout\r\n";
+        echo "$client_id------logout\r\n";
+
+        if (!empty($_SESSION['uid'])) {
+            self::setUserOnlineState($_SESSION['uid'],-1);
+        }
     }
 
     // 获取待接入会话列表
