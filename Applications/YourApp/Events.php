@@ -19,6 +19,8 @@ class Events{
 
     const IMG_TRANSFER_URL = 'http://kf.lyfz.net/api/v1/we_chat/Business/getWxUrlImg?url=';
 
+    const IMG_URL = 'http://kf.lyfz.net/api/v1/we_chat/Business/getImg?resources_id=';
+
     // 返回消息码处理
     private static function msg($code, $message, $body = ''){
         return json_encode([
@@ -265,8 +267,12 @@ class Events{
                         $val['text'] = '';
                     }
 
-                    if($val['message_type'] == 2){
+                    if($val['opercode'] == 2 && $val['message_type'] == 2){
                         $val['file_url'] = self::IMG_TRANSFER_URL.$val['file_url'];
+                    }
+
+                    if($val['opercode'] == 3 && $val['message_type'] == 2){
+                        $val['file_url'] = self::IMG_URL.$val['resources_id'];
                     }
 
                     $message_arr[$val['customer_wx_openid']][] = $val;
