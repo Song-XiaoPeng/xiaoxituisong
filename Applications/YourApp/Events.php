@@ -182,6 +182,8 @@ class Events{
     public static function onClose($client_id){
         echo "$client_id------logout\r\n";
 
+        Gateway::closeClient($client_id);
+
         if (!empty($_SESSION['uid'])) {
             self::setUserOnlineState($_SESSION['uid'],-1);
         }
