@@ -396,8 +396,9 @@ class Events
         $request_data = [
             'session_id' => $session_id,
         ];
+        var_dump($_SESSION);
 
-        $response = $client->request(
+/*        $response = $client->request(
             'PUT',
             self::API_URL . '/api/v1/message/Common/getGroupIdBySessionId',
             [
@@ -414,7 +415,7 @@ class Events
             return $res['body']['group_id'];
         } else {
             return false;
-        }
+        }*/
     }
 
     //获得群聊消息
