@@ -314,8 +314,8 @@ class Events
                         $session_id = $val['session_id'];
                         $group_message[$val['customer_wx_openid']] = $val;
                         $group_id = self::getGroupId($session_id);
-                        if($group_id){
-                            Gateway::sendToGroup($group_id,$group_message);
+                        if ($group_id) {
+                            Gateway::sendToGroup($group_id, self::msg(200, 'success', $group_message));
                         }
                     }
                     $message_arr[$val['customer_wx_openid']][] = $val;
@@ -393,9 +393,9 @@ class Events
                 'timeout' => 3
             ]);
         $res = json_decode($response->getBody(), true);
-        if($res->meta == 200){
+        if ($res->meta == 200) {
             return $res->data->group_id;
-        }else{
+        } else {
             return faslse;
         }
     }
