@@ -187,12 +187,16 @@ class Events
                 if (count($join) > 0) {
                     foreach ($join as $uid) {
                         $client_id = Gateway::getClientIdByUid($uid);
+                        echo $uid . "加入了群组$group_id\r\n";
+                        echo "client_id:" . $client_id . "\r\n";
                         Gateway::joinGroup($client_id, $group_id);
                     }
                 }
                 if (count($leave) > 0) {
                     foreach ($join as $uid) {
                         $client_id = Gateway::getClientIdByUid($uid);
+                        echo $uid . "加入了群组$group_id\r\n";
+                        echo "client_id:" . $client_id . "\r\n";
                         Gateway::leaveGroup($client_id, $group_id);
                     }
                 }
@@ -314,6 +318,7 @@ class Events
                         $session_id = $val['session_id'];
                         $group_message[$val['customer_wx_openid']] = $val;
                         $group_id = self::getGroupId($session_id);
+                        echo "group_id是：$group_id\r\n";
                         if ($group_id) {
                             Gateway::sendToGroup($group_id, self::msg(200, 'success', $group_message));
                         }
@@ -394,7 +399,7 @@ class Events
                 'timeout' => 3
             ]);
         $res = json_decode($response->getBody(), true);
-        if ($res->meta == 200) {
+        if ($res['meta'] == 200) {
             return $res['body']['group_id'];
         } else {
             return faslse;
