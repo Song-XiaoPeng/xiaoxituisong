@@ -410,10 +410,10 @@ class Events
                 'timeout' => 3
             ]);
         $res = json_decode($response->getBody(), true);
-        if ($res['meta'] == 200) {
+        if ($res['meta']['code'] == 200) {
             return $res['body']['group_id'];
         } else {
-            return faslse;
+            return false;
         }
     }
 
