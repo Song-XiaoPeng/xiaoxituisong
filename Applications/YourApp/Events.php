@@ -150,6 +150,7 @@ class Events
     {
         if (is_array($message)) {
             $message = $message['post'];
+            var_dump($message);
         } else {
             echo "$client_id sid $message\r\n";
             $message = json_decode($message, true);
@@ -188,18 +189,26 @@ class Events
                 $group_id = $message['group_id'];
                 if (count($join) > 0) {
                     foreach ($join as $uid) {
-                        $client_id = Gateway::getClientIdByUid($uid);
-                        echo $uid . "加入了群组$group_id\r\n";
-                        echo "client_id:" . $client_id . "\r\n";
-                        Gateway::joinGroup($client_id, $group_id);
+                        $client_ids = Gateway::getClientIdByUid($uid);
+                        if(count($client_ids)){
+                            foreach($client_ids as $client_id){
+                                echo $uid . "加入了群组$group_id\r\n";
+                                echo "client_id:" . $client_id . "\r\n";
+                                Gateway::joinGroup($client_id, $group_id);
+                            }
+                        }
                     }
                 }
                 if (count($leave) > 0) {
                     foreach ($join as $uid) {
-                        $client_id = Gateway::getClientIdByUid($uid);
-                        echo $uid . "加入了群组$group_id\r\n";
-                        echo "client_id:" . $client_id . "\r\n";
-                        Gateway::leaveGroup($client_id, $group_id);
+                        $client_ids = Gateway::getClientIdByUid($uid);
+                        if(count($client_ids)){
+                            foreach($client_ids as $client_id){
+                                echo $uid . "移除了群组$group_id\r\n";
+                                echo "client_id:" . $client_id . "\r\n";
+                                Gateway::leaveGroup($client_id, $group_id);
+                            }
+                        }
                     }
                 }
                 break;
