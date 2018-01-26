@@ -399,7 +399,10 @@ class Events
         $token = $_SESSION['token'];
         $uid = $_SESSION['uid'];
         $client = $_SESSION['client'];
-
+        var_dump($_SESSION);
+        var_dump($_SESSION['token']);
+        var_dump($token);
+        var_dump($_SESSION['uid']);
         $response = $guzzle_client->request(
             'PUT',
             self::API_URL . '/api/v1/message/Common/getGroupIdBySessionId',
