@@ -148,7 +148,8 @@ class Events
      */
     public static function onMessage($client_id, $message)
     {
-        echo "$client_id sid $message\r\n";
+        var_dump($message);
+//        echo "$client_id sid $message\r\n";
 
         $message = json_decode($message, true);
 
