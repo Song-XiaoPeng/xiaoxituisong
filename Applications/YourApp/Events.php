@@ -372,6 +372,7 @@ class Events
         return json_decode($response->getBody(), true);
     }
 
+    //获得groupid
     public static function getGroupId($session_id)
     {
         $client = new \GuzzleHttp\Client();
@@ -382,7 +383,7 @@ class Events
 
         $response = $client->request(
             'PUT',
-            self::API_URL . '/api/v1/we_chat/WxOperation/getGroupIdBySessionId',
+            self::API_URL . '/api/v1/message/Common/getGroupIdBySessionId',
             [
                 'headers' => [
                     'token' => $_SESSION['token'],
@@ -394,7 +395,7 @@ class Events
             ]);
         $res = json_decode($response->getBody(), true);
         if ($res->meta == 200) {
-            return $res->data->group_id;
+            return $res['body']['group_id'];
         } else {
             return faslse;
         }
