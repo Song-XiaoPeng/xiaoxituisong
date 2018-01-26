@@ -184,14 +184,14 @@ class Events
                 self::getConversationSessionList($message['uid']);
                 break;
             case 'create_group':
-                $join = empty($message['join'])? [] :$message['join'] ;
+                $join = empty($message['join']) ? [] : $message['join'];
                 $leave = empty($message['leave']) ? [] : $message['leave'];
                 $group_id = $message['group_id'];
                 if (count($join) > 0) {
                     foreach ($join as $uid) {
                         $client_ids = Gateway::getClientIdByUid($uid);
-                        if(count($client_ids)){
-                            foreach($client_ids as $client_id){
+                        if (count($client_ids)) {
+                            foreach ($client_ids as $client_id) {
                                 echo $uid . "加入了群组$group_id\r\n";
                                 echo "client_id:" . $client_id . "\r\n";
                                 Gateway::joinGroup($client_id, $group_id);
@@ -202,8 +202,8 @@ class Events
                 if (count($leave) > 0) {
                     foreach ($join as $uid) {
                         $client_ids = Gateway::getClientIdByUid($uid);
-                        if(count($client_ids)){
-                            foreach($client_ids as $client_id){
+                        if (count($client_ids)) {
+                            foreach ($client_ids as $client_id) {
                                 echo $uid . "移除了群组$group_id\r\n";
                                 echo "client_id:" . $client_id . "\r\n";
                                 Gateway::leaveGroup($client_id, $group_id);
@@ -391,7 +391,7 @@ class Events
     //获得groupid
     public static function getGroupId($session_id)
     {
-        $client = new \GuzzleHttp\Client();
+        $guzzle_client = new \GuzzleHttp\Client();
 
         $request_data = [
             'session_id' => $session_id,
@@ -400,7 +400,7 @@ class Events
         $uid = $_SESSION['uid'];
         $client = $_SESSION['client'];
 
-        $response = $client->request(
+        $response = $guzzle_client->request(
             'PUT',
             self::API_URL . '/api/v1/message/Common/getGroupIdBySessionId',
             [
