@@ -396,16 +396,18 @@ class Events
         $request_data = [
             'session_id' => $session_id,
         ];
-        var_dump($_SESSION);
+        $token = $_SESSION['token'];
+        $uid = $_SESSION['uid'];
+        $client = $_SESSION['client'];
 
-/*        $response = $client->request(
+        $response = $client->request(
             'PUT',
             self::API_URL . '/api/v1/message/Common/getGroupIdBySessionId',
             [
                 'headers' => [
-                    'token' => $_SESSION['token'],
-                    'uid' => $_SESSION['uid'],
-                    'client' => $_SESSION['client']
+                    'token' => $token,
+                    'uid' => $uid,
+                    'client' => $client
                 ],
                 'json' => $request_data,
                 'timeout' => 3
@@ -415,7 +417,7 @@ class Events
             return $res['body']['group_id'];
         } else {
             return false;
-        }*/
+        }
     }
 
     //获得群聊消息
