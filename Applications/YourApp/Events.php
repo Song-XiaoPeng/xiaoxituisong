@@ -148,11 +148,12 @@ class Events
      */
     public static function onMessage($client_id, $message)
     {
-        var_dump($message);
-//        echo "$client_id sid $message\r\n";
-
-        $message = json_decode($message, true);
-
+        if (is_array($message)) {
+            $message = $message['post'];
+        } else {
+            echo "$client_id sid $message\r\n";
+            $message = json_decode($message, true);
+        }
         switch ($message['type']) {
             case 'auth':
                 $check_res = self::checkToken($message['uid'], $message['token'], $message['client']);
