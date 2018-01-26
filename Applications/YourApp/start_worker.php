@@ -19,7 +19,7 @@ require_once __DIR__ . '/../../vendor/autoload.php';
 
 // #### 内部推送端口(假设当前服务器内网ip为192.168.100.100) ####
 // #### 端口不能与原来start_gateway.php中一样 ####
-$internal_gateway = new Gateway("http://0.0.0.0:8888");
+$internal_gateway = new Gateway("http://0.0.0.0:8989");
 $internal_gateway->name='internalGateway';
 // #### 不要与原来start_gateway.php的一样####
 // #### 比原来跨度大一些，比如在原有startPort基础上+1000 ####
