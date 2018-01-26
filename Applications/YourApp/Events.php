@@ -184,8 +184,8 @@ class Events
                 self::getConversationSessionList($message['uid']);
                 break;
             case 'create_group':
-                $join = $message['join'];
-                $leave = $message['leave'];
+                $join = empty($message['join'])? [] :$message['join'] ;
+                $leave = empty($message['leave']) ? [] : $message['leave'];
                 $group_id = $message['group_id'];
                 if (count($join) > 0) {
                     foreach ($join as $uid) {
