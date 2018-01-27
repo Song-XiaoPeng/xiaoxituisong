@@ -148,13 +148,16 @@ class Events
      */
     public static function onMessage($client_id, $message)
     {
-        if (is_array($message)) {
+        /*if (is_array($message)) {
             $message = $message['post'];
             var_dump($message);
         } else {
             echo "$client_id sid $message\r\n";
             $message = json_decode($message, true);
-        }
+        }*/
+        echo "$client_id sid $message\r\n";
+        $message = json_decode($message, true);
+
         switch ($message['type']) {
             case 'auth':
                 $check_res = self::checkToken($message['uid'], $message['token'], $message['client']);
@@ -183,35 +186,39 @@ class Events
             case 'get_lineup_session':
                 self::getConversationSessionList($message['uid']);
                 break;
-            case 'create_group':
-                $join = empty($message['join']) ? [] : $message['join'];
-                $leave = empty($message['leave']) ? [] : $message['leave'];
-                $group_id = $message['group_id'];
-                if (count($join) > 0) {
-                    foreach ($join as $uid) {
-                        $client_ids = Gateway::getClientIdByUid($uid);
-                        if (count($client_ids)) {
-                            foreach ($client_ids as $client_id) {
-                                echo $uid . "加入了群组$group_id\r\n";
-                                echo "client_id:" . $client_id . "\r\n";
-                                Gateway::joinGroup($client_id, $group_id);
-                            }
-                        }
-                    }
-                }
-                if (count($leave) > 0) {
-                    foreach ($join as $uid) {
-                        $client_ids = Gateway::getClientIdByUid($uid);
-                        if (count($client_ids)) {
-                            foreach ($client_ids as $client_id) {
-                                echo $uid . "移除了群组$group_id\r\n";
-                                echo "client_id:" . $client_id . "\r\n";
-                                Gateway::leaveGroup($client_id, $group_id);
-                            }
-                        }
-                    }
-                }
-                break;
+//            case 'create_group':
+//                $join = empty($message['join']) ? [] : $message['join'];
+//                $leave = empty($message['leave']) ? [] : $message['leave'];
+//                $group_id = $message['group_id'];
+//                if (count($join) > 0) {
+//                    foreach ($join as $uid) {
+//                        $client_ids = Gateway::getClientIdByUid($uid);
+//                        if (count($client_ids)) {
+//                            foreach ($client_ids as $client_id) {
+//                                echo '==================================================='."\r\n";
+//                                Gateway::joinGroup($client_id, $group_id);
+//                                echo $uid . "加入了群组$group_id\r\n";
+//                                echo "client_id:" . $client_id . "加入了群组\r\n";
+//                                echo '==================================================='."\r\n";
+//                            }
+//                        }
+//                    }
+//                }
+//
+//                if (count($leave) > 0) {
+//                    foreach ($join as $uid) {
+//                        $client_ids = Gateway::getClientIdByUid($uid);
+//                        if (count($client_ids)) {
+//                            foreach ($client_ids as $client_id) {
+//                                echo $uid . "移除了群组$group_id\r\n";
+//                                echo "client_id:" . $client_id . "\r\n";
+//                                Gateway::leaveGroup($client_id, $group_id);
+//                            }
+//                        }
+//                    }
+//                }
+//
+//                break;
             default:
                 Gateway::sendToClient($client_id, self::msg(6003, 'type error'));
                 Gateway::closeClient($client_id);
@@ -325,23 +332,39 @@ class Events
                         $val['file_url'] = self::IMG_URL . $val['resources_id'];
                     }
 
-                    if ($val['opercode'] == 4) {
+                    /*if ($val['opercode'] == 4) {
                         $session_id = $val['session_id'];
-                        $group_message[$val['customer_wx_openid']] = $val;
+                        $group_message[$val['customer_wx_openid']][] = $val;
                         $group_id = self::getGroupId($session_id);
-                        echo "group_id是：$group_id\r\n";
                         if ($group_id) {
-                            Gateway::sendToGroup($group_id, self::msg(200, 'success', $group_message));
+                            $arr = [
+                                'type' => 'message',
+                                'sk_data' => $group_message
+                            ];
+
+                            $arr = [
+                                'type' => 'session',
+                                'sk_data' => [
+                                    'queue_up' => [],
+                                ]
+                            ];
+
+                            Gateway::sendToUid($uid, self::msg(200, 'success', $arr));
+
+                            Gateway::sendToGroup($group_id, self::msg(200, 'success',$arr ));
+                            echo '----------------------------------------------------------'."\r\n";
+                            var_dump(Gateway::getClientSessionsByGroup($group_id));
+                            echo '----------------------------------------------------------'."\r\n";
+                            echo "给group_id是：{$group_id}的群组发送群聊消息\r\n";
                         }
-                    }
+                    }*/
+
                     $message_arr[$val['customer_wx_openid']][] = $val;
                 }
-
                 $arr = [
                     'type' => 'message',
                     'sk_data' => $message_arr
                 ];
-
                 Gateway::sendToUid($uid, self::msg(200, 'success', $arr));
             }
         }
@@ -359,9 +382,9 @@ class Events
         });
 
         //设置群聊消息
-//        Timer::add(3, function () {
-//            self::getGroupChatList();
-//        });
+        Timer::add(3, function () {
+            self::getGroupChatList();
+        });
     }
 
     //获得群聊组员信息
@@ -399,10 +422,7 @@ class Events
         $token = $_SESSION['token'];
         $uid = $_SESSION['uid'];
         $client = $_SESSION['client'];
-        var_dump($_SESSION);
-        var_dump($_SESSION['token']);
-        var_dump($token);
-        var_dump($_SESSION['uid']);
+
         $response = $guzzle_client->request(
             'PUT',
             self::API_URL . '/api/v1/message/Common/getGroupIdBySessionId',
@@ -429,56 +449,24 @@ class Events
         $redis = self::createRedis();
         $redis->select(5);
         $uid_list = $redis->keys('*');
+
         foreach ($uid_list as $uid) {
-            $message_list = $redis->zRange($uid, 0, -1);
-            foreach ($message_list as $key => $val) {
-                $val = json_decode($val, true);
+            $session_list = $redis->sMembers($uid);
 
-                if (!empty($val['text'])) {
-                    $val['text'] = self::emojiDeCode($val['text']);
-                } else {
-                    $val['text'] = '';
+            if (Gateway::getClientIdByUid($uid)) {
+                $redis->del($uid);
+
+                foreach ($session_list as $key => $val) {
+                    $waiting_arr[$key] = json_decode($val, true);
                 }
 
-                if ($val['message_type'] == 2) {
-                    $val['file_url'] = self::IMG_TRANSFER_URL . $val['file_url'];
-                }
+                $arr = [
+                    'type' => 'group',
+                    'sk_data' => $waiting_arr ? $waiting_arr : []
+                ];
 
-                if ($val['message_type'] == 2) {
-                    $val['file_url'] = self::IMG_URL . $val['resources_id'];
-                }
-
-                /*
-                $session_id = $val['session_id'];
-                //查找是否存在群聊
-                $res = self::getGroupChatUser($session_id);
-                if ($res->meta == 200 && !empty($res->data)) {
-                    $group_user_list = $res->data;
-                    $uids = array_column($group_user_list, 'uid');
-                    //绑定至群组
-
-                }*/
-
-                $message_arr[$val['customer_wx_openid']][] = $val;
-                $uids = $val['uids'];
+                Gateway::sendToUid($uid, self::msg(200, 'success', $arr));
             }
-
-            foreach ($uids as $v) {
-                if ($v == $uid) {
-                    continue;
-                }
-                if (Gateway::getClientIdByUid($v)) {
-                    $redis->del($v);
-
-                    $arr = [
-                        'type' => 'message',
-                        'sk_data' => $message_arr
-                    ];
-
-                    Gateway::sendToUid($v, self::msg(200, 'success', $arr));
-                }
-            }
-
         }
     }
 }
