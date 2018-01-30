@@ -64,26 +64,6 @@ class Events{
         return json_decode($response->getBody(), true);
     }
 
-    // 获取uid的商户company_id
-    private static function getUidCompanyId($uid){
-        $client = new \GuzzleHttp\Client();
-
-        $request_data = [
-            'uid' => $uid
-        ];
-
-        $response = $client->request(
-            'PUT',
-            self::API_URL . '/api/v1/user/Auth/getUidCompanyId',
-            [
-                'json' => $request_data,
-                'timeout' => 3
-            ]
-        );
-
-        return json_decode($response->getBody(), true)['body']['company_id'];
-    }
-
     // 标记账号在线或不在线
     private static function setUserOnlineState($uid, $state){
         $client = new \GuzzleHttp\Client();
@@ -223,11 +203,7 @@ class Events{
     // 获取排队中会话列表
     public static function getConversationSessionList($uid){
         //获取用户的company_id
-        if (!empty($_SESSION['company_id'])) {
-            $company_id = $_SESSION['company_id'];
-        } else {
-            $company_id = self::getUidCompanyId($uid);
-        }
+        $company_id = $_SESSION['company_id'];
 
         $redis = self::createRedis();
         $redis->select(2);
@@ -300,7 +276,6 @@ class Events{
             self::getSessionList();
         });
 
-        // 设置群聊消息
         Timer::add(3, function () {
             self::getGroupChatList();
         });
