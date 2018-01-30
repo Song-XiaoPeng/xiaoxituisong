@@ -306,60 +306,6 @@ class Events{
         });
     }
 
-    // 获得群聊组员信息
-    public static function getGroupChatUser($session_id){
-        $client = new \GuzzleHttp\Client();
-
-        $request_data = [
-            'session_id' => $session_id,
-        ];
-
-        $response = $client->request(
-            'PUT',
-            self::API_URL . '/api/v1/we_chat/WxOperationLogic/getGroupChatMemberList',
-            [
-                'headers' => [
-                    'token' => $_SESSION['token'],
-                    'uid' => $_SESSION['uid'],
-                    'client' => $_SESSION['client']
-                ],
-                'json' => $request_data,
-                'timeout' => 3
-            ]);
-        return json_decode($response->getBody(), true);
-    }
-
-    // 获得groupid
-    public static function getGroupId($session_id){
-        $guzzle_client = new \GuzzleHttp\Client();
-
-        $request_data = [
-            'session_id' => $session_id,
-        ];
-        $token = $_SESSION['token'];
-        $uid = $_SESSION['uid'];
-        $client = $_SESSION['client'];
-
-        $response = $guzzle_client->request(
-            'PUT',
-            self::API_URL . '/api/v1/message/Common/getGroupIdBySessionId',
-            [
-                'headers' => [
-                    'token' => $token,
-                    'uid' => $uid,
-                    'client' => $client
-                ],
-                'json' => $request_data,
-                'timeout' => 3
-            ]);
-        $res = json_decode($response->getBody(), true);
-        if ($res['meta']['code'] == 200) {
-            return $res['body']['group_id'];
-        } else {
-            return false;
-        }
-    }
-
     // 获得群聊消息
     public static function getGroupChatList(){
         $redis = self::createRedis();
