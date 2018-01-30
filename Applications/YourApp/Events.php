@@ -64,27 +64,6 @@ class Events{
         return json_decode($response->getBody(), true);
     }
 
-    // 标记账号在线或不在线
-    private static function setUserOnlineState($uid, $state){
-        $client = new \GuzzleHttp\Client();
-
-        $request_data = [
-            'uid' => $uid,
-            'state' => $state
-        ];
-
-        $response = $client->request(
-            'PUT',
-            self::API_URL . '/api/v1/user/Auth/setUserOnlineState',
-            [
-                'json' => $request_data,
-                'timeout' => 3
-            ]
-        );
-
-        return json_decode($response->getBody(), true);
-    }
-
     //创建redis连接
     public static function createRedis(){
         $redis = new \Predis\Client([
@@ -141,8 +120,6 @@ class Events{
 
                     Gateway::bindUid($client_id, $message['uid']);
                     Gateway::sendToClient($client_id, self::msg(200, 'success', ['client_id' => $client_id]));
-
-                    self::setUserOnlineState($message['uid'], 1);
                 }
                 break;
             case 'ping':
@@ -165,10 +142,6 @@ class Events{
         echo "$client_id------logout\r\n";
 
         Gateway::closeClient($client_id);
-
-        if (!empty($_SESSION['uid'])) {
-            self::setUserOnlineState($_SESSION['uid'], -1);
-        }
     }
 
     // 获取待接入会话列表
