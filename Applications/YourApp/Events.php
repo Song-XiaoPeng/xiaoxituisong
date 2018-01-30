@@ -130,15 +130,15 @@ class Events{
                     Gateway::sendToClient($client_id, self::msg(6001, 'token error'));
                     Gateway::closeClient($client_id);
                 } else {
-                    if (!empty($message['company_id'])) {
-                        $_SESSION['company_id'] = $message['company_id'];
-                    }
-
+                    $_SESSION['company_id'] = $message['company_id'];
                     $_SESSION['uid'] = $message['uid'];
                     $_SESSION['token'] = $message['token'];
                     $_SESSION['client'] = $message['client'];
 
                     Timer::del($_SESSION['auth_timer_id']);
+
+                    Gateway::joinGroup($client_id, $message['company_id']);
+
                     Gateway::bindUid($client_id, $message['uid']);
                     Gateway::sendToClient($client_id, self::msg(200, 'success', ['client_id' => $client_id]));
 
