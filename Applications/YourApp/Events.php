@@ -268,14 +268,17 @@ class Events{
 
     // 启动进程计时器轮询发送相应redis数据至im客户端
     public static function onWorkerStart(){
+        // 获取消息数据
         Timer::add(2, function () {
             self::getMessageList();
         });
 
+        // 获取普通会话数据
         Timer::add(3, function () {
             self::getSessionList();
         });
 
+        // 获取群聊数据
         Timer::add(3, function () {
             self::getGroupChatList();
         });
