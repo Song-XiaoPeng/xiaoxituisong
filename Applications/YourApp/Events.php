@@ -229,12 +229,21 @@ class Events{
                     }
 
                     $message_arr[$val['customer_wx_openid']][] = $val;
+                    $message_arrs[] = $val;
                 }
+
                 $arr = [
                     'type' => 'message',
                     'sk_data' => $message_arr
                 ];
+
+                $arrs = [
+                    'type' => 'message',
+                    'sk_data' => $message_arrs
+                ];
+
                 Gateway::sendToUid($uid, self::msg(200, 'success', $arr));
+                Gateway::sendToUid($uid, self::msg(200, 'success', $arrs));
             }
         }
     }
