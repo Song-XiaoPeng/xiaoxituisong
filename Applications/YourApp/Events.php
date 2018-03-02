@@ -238,7 +238,7 @@ class Events{
                 ];
 
                 $arrs = [
-                    'type' => 'message',
+                    'type' => 'messages',
                     'sk_data' => $message_arrs
                 ];
 
